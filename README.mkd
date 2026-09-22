@@ -1,7 +1,5 @@
 # Snake Royale
 
-Implemented core logic for Jane Street's OCaml Snake with a twist.
-
 This is a competitive two-player Snake game that can be played across two computers, with an authoritative game server written in OCaml.
 
 The server owns the entire simulation. It ticks the game on an Async clock at 10 Hz whether or not anyone is watching, routes each player's keystrokes to their own snake by token, and detects a dropped opponent through the same poll the client already uses to render. The browsers hold no game logic at all, and draw the state document they are handed and post keys back. Two screens cannot disagree about where the snakes are, because only one process knows.
