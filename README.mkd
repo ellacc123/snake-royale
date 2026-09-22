@@ -18,19 +18,19 @@ The server owns the entire simulation. It ticks the game on an Async clock at 10
 
 **Two players on two machines, plus a spectator on the same match.** Every client renders from the same state document, so positions and scores stay in step with no client-side simulation and no reconciliation logic.
 
-![Two players and a spectator](2playsplaying.png)
+<img src="2playersplaying.png" alt="Two players and a spectator" width="600">
 
 **The first player to join waits.** The clock is already running, because an abandoned seat still has to time out, but the game does not advance until both seats are filled. Keys are ignored while waiting, so nobody warms up by steering an unstarted game.
 
-![Waiting for an opponent](waitingforopponent.png)
+<img src="waitingforopponent.png" alt="Waiting for an opponent" width="600">
 
 **The server decides the outcome and says why,** including draws where both snakes die on the same tick. Both clients report it identically because neither one computed it.
 
-![Game over on both screens](docs/playerdied.png)
+<img src="playerdied.png" alt="Game over on both screens" width="600">
 
 **Everyone after the first two spectates.** Spectators receive the full state document but no token, so their keystrokes are ignored by the server rather than filtered by the client.
 
-![Spectating](docs/serverbusy.png)
+<img src="serverbusy.png" alt="Spectating" width="600">
 
 ---
 
