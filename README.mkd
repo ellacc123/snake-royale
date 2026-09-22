@@ -169,4 +169,4 @@ This is built for localhost and a LAN, deliberately, and the boundaries are draw
 
 ## Credits and license
 
-The single-player game underneath this is the `03-snake` exercise from [Jane Street's OCaml workshop](https://github.com/janestreet/learn-ocaml-workshop), used under the Apache License 2.0. The exercise solutions, competitive mode, the HTTP server in `server/`, the TypeScript client in `web/`, and `NETWORK_PLAY.md` are original work in this fork. [NOTICE](NOTICE) lists which files were modified and which are new; [LICENSE](LICENSE) has the license text. This repository is Apache 2.0.
+The single-player game underneath this is the `03-snake` exercise from [Jane Street's OCaml workshop](https://github.com/janestreet/learn-ocaml-workshop), used under the Apache License 2.0. The exercise solutions, competitive mode, the HTTP server in `server/`, the TypeScript client in `web/`, and `NETWORK_PLAY.md` are **ORIGINAL** work in this fork. [NOTICE](NOTICE) lists which files were modified and which are new; [LICENSE](LICENSE) has the license text. This repository is Apache 2.0.
