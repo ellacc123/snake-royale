@@ -1,0 +1,60 @@
+---
+title: "Exercise 08: Score"
+uuid: 354d3da4-833c-37dc-ccbf-6a1e62e37165
+---
+
+In order to track the score, we'll need to make a few changes.
+
+First, we'll need to add a new field to the game to represent the
+score. This field will need to be mutable, so that we can update the
+score as the game progresses. We'll also need to modify the [create]
+function to set the initial value, and the [score] function to return
+the current score rather than a hardcoded value. 
+
+Then, we'll need to update the graphics to display the score. The
+[render] function in snake_graphics.ml takes the game and uses it to
+draw each part. The part of this we'll want to modify is
+[draw_header].
+
+Currently, [draw_header] takes a game_state. Let's update it to take
+in the score as an argument as well.
+
+By the way, did you notice that all of the Graphics commands end in
+";"? This is because they are all side-effecting. ";" in OCaml is
+syntatic sugar for sequencing side-effecting statements. For example,
+compare these two implementations with the same behavior:
+
+```
+Stdio.printf "Hello"; 
+Stdio.printf "World";
+```
+
+```
+let () = Stdio.printf "Hello" in
+let () = Stdio.printf "World" in
+()
+```
+
+Anyway, the graphics library is a little clunky, but if you add
+something like:
+``` 
+  Graphics.moveto 0 (play_area_height + 50);
+  Graphics.draw_string (Printf.sprintf "Score: %d" score);
+```
+
+to [draw_header], the result will look pretty reasonable. Feel free to
+look at color options or other things that might be interesting!
+
+Once you've added the score, let's update [maybe_consume_apple] in
+game.ml so that we add points if an apple is consumed.
+
+Some ideas to consider:
+- how many points should each apple be worth?
+- should the score be a function of the apple's color? (you can try
+  adding a new function to apple.ml that determines the number of
+  points based on the color of the apple -- use [amount_to_grow] as a
+  guide)
+- should the score be a function of how quickly an apple is consumed?
+- can apples change colors? maybe they start out as one color and
+  change into another that is worth fewer points? (use the
+  implementation of [extensions_remaining] as a guide)

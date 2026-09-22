@@ -1,0 +1,26 @@
+---
+title: "Exercise 10: Restart game button"
+uuid: bf2b0e63-a74f-3348-cc94-ac54e990ef67
+---
+
+Currently, the game infrastructure only lets us play a single game
+every time we execute the binary. We'll need to dig into the logic
+that handles setting up and running the game in order to implement a
+button that lets us reset and play another game.
+
+A good first step would be to take a look at src/run.ml and understand
+how we run a single game. This logic is a bit tricky! Feel free to
+reach out to a TA if you have any questions.
+
+We'll probably need to tease out the setup logic that initializes the
+graphics from the business logic that runs the game. That means we'll
+probably want some way to reset the game state (including the snake,
+apple, and anything else that you may have added).
+
+And of course, we'll need some way to actually trigger a game
+restart. The easiest option is to add a keybinding, but the graphics
+library also has support for mouse events and buttons that you are
+more than welcome to explore.
+
+There are many ways that you can implement this feature; don't
+hesitate to grab a TA if you want to discuss your ideas!

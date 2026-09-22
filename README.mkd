@@ -1,0 +1,223 @@
+---
+title: Snake!
+uuid: 7d22cc6b-de84-373c-edc4-b26f9cbac727
+---
+
+> **Attribution.** This repository is a modified copy of the `03-snake`
+> exercise from the [Jane Street OCaml
+> workshop](https://github.com/janestreet/learn-ocaml-workshop), used under the
+> Apache License 2.0. The exercise text and scaffolding below are Jane Street's;
+> the exercise solutions, the HTTP game server in `server/`, the TypeScript
+> client in `web/`, and [`NETWORK_PLAY.md`](NETWORK_PLAY.md) are this fork's own
+> work. See [`NOTICE`](NOTICE) for the full list of which files were changed and
+> which are original, and [`LICENSE`](LICENSE) for the license text.
+>
+> For the networked two-player build and its design rationale, start at
+> [`NETWORK_PLAY.md`](NETWORK_PLAY.md).
+
+The goal of this series of exercises is to teach you OCaml while
+implementing a game of snake.
+
+Below is an an explanation of each exercise. The documentation here
+and embedded in the code will help guide you through each step along
+the way and also give you the tools to debug and understand the rest
+of provided code.
+
+We encourage you to use your favorite editor to write the code; if you
+aren't already committed to one, we recommend using VSCode.
+
+# Exercise 00: Getting Started
+
+
+First, let's start by compiling the existing code. Once you're in the
+snake directory, you can the following to compile your code:
+
+` $ dune build `
+
+This command will make dune build the default targets of the snake
+game.
+
+You can also run dune in polling mode, which will watch your
+filesystem for any changes and rebuild when necessary. To do this, run
+the following (probably in its own terminal):
+
+` $ dune build -w `
+
+OCaml code can be autoformatted using ocamlformat. To format your code, run
+
+` $ dune fmt `
+
+If you're using VSCode, you can configure your editor to automatically save and
+format your code periodically. Otherwise, you might want to run the above command
+periodically to manually format your code.
+
+Each exercise has its own tests. To run the tests for exercise number N, run
+
+` $ dune runtest tests/exerciseN `
+
+To run the game of snake, run
+
+` $ dune exec bin/snake.exe `
+
+(Note that this command will also rebuild the snake executable if
+necessary.)
+
+
+To kill the game, run Ctrl-C in the terminal you launched the game from.
+
+As you can see, we've provided you with some framework code that
+creates the snake game and spawns an apple, but does nothing else. Not
+very exciting. Through the exercises that follow, you'll turn this
+into a fully working game!
+
+NOTE: many of the exercises will have ignore statements at the
+top. The reason for this is OCaml complains about unused
+variables. The ignores are present so that you don't have issues
+running the game with parts not yet complete. When you start work on
+an exercise, you should remove all the ignores so that the compiler
+warns you about unused variables.
+
+A few tips and hints:
+
+- If you are seeing unexpected syntax errors in your editor
+  (especially VSCode), try rebuilding the executable in the
+  terminal.
+- If you are trying to debug by running the snake game and the snake
+  is moving too fast, a reasonable thing to do might be to temporarily
+  decrease the speed of the snake. To do so, change the `0.1` to a
+  larger value in the `handle_steps` function in `run.ml`.
+- If you would like to print out various parts of your program's state
+  for debugging, you can use the `printf` or `print_s`. Here are a few
+  examples, and feel free to grab a TA if you have any questions.
+
+```ocaml
+printf "My int is: %d. My string is %s.\n" int_variable string_variable;
+print_s [%message (int_variable : int) (string_variable : string)];
+```
+
+# Exercise 01: Moving Forward
+
+Alright. The first thing we need to do is make it so the snake
+actually moves. In `src/snake.ml`, there is a function stub
+`move_forward`, which is supposed to advance the snake's position one
+square. Open up that file, and read the exercise there.
+
+# Exercise 02: Turning
+
+If you run the game now, the snake should walk forward until it
+reaches the edge of the black board, but it will never stop and will
+keep moving forever. There's also no way for you to interact with
+it, and there's nothing that ends the game. We'll tackle both of
+these, but let's work on making our game interactive by handling
+keyboard input first.
+
+Let's complete:
+
+- exercise 02a in `src/direction.ml`
+- exercise 02b in `src/game.ml`
+
+# Exercise 03: Losing
+
+As noted in the previous exercise, nothing currently prevents the
+snake from running off of the black game board. This is the next thing
+we're going to fix.
+
+Let's complete:
+
+- exercise 03a in `src/board.ml`
+- exercise 03b in `src/game.ml`
+
+# Exercise 04: Self-collision
+
+There's one more kind of collision that should end the game: the snake
+should die if it collides with itself. Once again there are two things
+we need to fix to make this happen.
+
+Let's complete:
+
+- exercise 04a in `src/snake.ml`
+- exercise 04b in `src/game.ml`
+
+# Exercise 05: Spawning Apples
+
+While playing with the game, you might have noticed that there is
+always a red dot that spawns on the board. This represents the apple
+that the snake is supposed to eat.
+
+You may have noticed it always spawns in the exact same position. This
+is because in apple.ml, we hardcoded that position into the
+`possible_apple_positions` function, which is used to create the
+apple.
+
+Let's fix this by completing exercise 05 in `src/apple.ml`
+
+# Exercise 06: Consuming Apples
+
+Now our apple can spawn at an arbitrary position but it's still the
+case that nothing happens when the snake goes over the apple.  We need
+to change it to consume the apple, and also cause the snake to grow
+over its next few steps.
+
+Let's complete:
+
+- exercise 06a in `src/snake.ml`
+- exercise 06b in `src/game.ml`
+- exercise 06c in `src/snake.ml`
+
+# Extensions
+
+Amazing! We now have a minimally viable version of snake!
+
+All exercises after this are extensions which will update and modify
+the game to make it more varied and more interesting. You can choose
+to implement any of these in any order, or come up with your own
+extensions.
+
+Rather than intersperse the explanations amongst each file that you'll
+need to touch, each of these extensions is explained in full detail in
+Exercise##.mkd. The explanation will guide you to what files you need
+to modify, but you'll have to figure out the exact changes to be made
+by yourself.
+
+If you would be excited to try some extensions that are not listed
+here, feel free to do those instead!  Grab a TA if you want to talk
+about an extension that isn't listed here.
+
+## [Exercise 07: Apple variants](Exercise07.mkd)
+
+There's no reason apples always have to be red. Exercise 07 will walk
+you through how to make different colors of apples that might have
+different behavior for the snake.
+
+## [Exercise 08: Score](Exercise08.mkd)
+
+The win condition for the game is filling the board, but maybe
+displaying a current score would be nice. If you added different apple
+colors in exercise07 you could make them worth different amounts of
+points.
+
+## [Exercise 09: Multiplayer](Exercise09.mkd)
+
+Competitive mode! This will show you how to add more snakes to the
+game so you can play against a friend.
+
+## [Exercise 10: Restart game button](Exercise10.mkd)
+
+It'd be nice if we didn't have to kill and relaunch the game from the
+terminal every time we wanted to play again. In this exercise, you'll
+implement a button to restart the game.
+
+## Other ideas
+
+You're more than welcome to come up with your own modifications and
+extensions to the game! Here are a few ideas to get those creative
+juices flowing.
+
+- add apples with interesting effects (e.g. changing the color of the
+snake, causing game mechanics to change)
+- add other keybindings with interesting effects
+- make the game speed up over time
+- allow the snake to overlap with itself
+- allow the snake to wrap around when it hits a wall
+- after implementing restart, implement a high-score board that
+persists between restarts

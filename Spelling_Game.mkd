@@ -1,0 +1,163 @@
+---
+title: "Spelling Game"
+uuid: 6511aa68-a0f8-11ef-bb54-aa9df7d4b76d
+---
+
+Let's put a twist on our classic game of Snake!
+
+Here's what our new game will look like:
+- The letters of the English alphabet are randomly scattered across the board
+- When the snake eats a letter, it gets added to the end of the snake's tail
+- When the snake eats the apple, the player "submits" the string in their snake's tail
+- Upon submission, the game finds the longest valid English word inside the string
+- If a word is found, two things happen:
+  1. the word is cleared from the tail (this means unused letters stick around in the tail)
+  2. the player gets number of points equal to the word length
+- When the snake eats a letter or apple, the letters respawn on the board in new locations
+
+You can play a demo by running the "spelling_snake_demo.exe" executable in your home
+directory via: ./spelling_snake_demo.exe
+
+Keep in mind that you can find helpful functions in `LIST_FUNCTIONS.mkd` and
+`STRING_FUNCTIONS.mkd`.
+
+Before we write any code, take a look at two modules we've given you: `Letter` and
+`Letters`. Do the interfaces make sense?
+
+Let's kick off!
+
+
+1. Spawning letters
+
+a. 
+Let's create a new field to store the letters scattered on the board, and expose a function to
+access it. Where should these live?
+
+We've added some code already to display letters. Once you've added this field, head over
+to `Snake_graphics`. Delete `ignore draw_letters` in the `render` function and call your
+new function instead.
+
+Give your game a run - do you see letters on the board?
+
+b.
+Lets slow down the game to make it easier to play and debug. Head over to `Run` and
+play around with the designated value in `handle_steps` until you're happy with the speed.
+
+2. Consuming letters
+
+a. 
+Let's create a new field to store the string that is built as the snake eats letters, and
+expose a function to access it. Where should these live?
+
+b. 
+Let's fill in `Snake.add_letter`, which adds an eaten character to the player's string. As
+you can see in the mli, it has this signature:
+
+```val add_letter : t -> char -> unit```
+
+c.
+Let's fill in `Game.maybe_consume_letter`, which checks if we've eaten a letter and
+handles either case.
+
+This function should have signature:
+```val maybe_consume_letter : t -> unit```
+
+Be sure to actually call `maybe_consume_letter` in the appropriate place, and update the
+`eaten_letters` variable over in `Snake_graphics`!
+
+d.
+In what cases should we regenerate the letters on the board? Go ahead and regenerate the
+letters on the board where needed.
+
+e. 
+Since we now grow the snake by eating letters, let's remove our logic to grow the snake
+when eating an apple.
+
+f. Since we're storing letters in our snake now, it might look a bit strange to have empty
+cells in our tail. Let's change `initial_snake_length` in `snake_graphics.ml` from 3 to 1
+and make sure `move_forward` in `snake` can handle all possible tails.
+
+Give your game another run and try eating some letters!
+
+3. Trie
+
+a.
+We're going to need some way to store and efficiently identify valid English words. A great way to
+do this is with the Trie data structure, which we're going to implement in this section.
+
+We've gone ahead and written Trie.mli - take a look at the interface.
+
+The first decision to make is what you want your type `t` to look like. Feel free to talk
+to your TA about your ideas before diving in.
+
+Hint: we suggest using mutable datatypes
+
+One you're happy with your `t`, go ahead and fill in the `create` function.
+
+
+b.
+Let's fill in `Trie.insert`. This function adds an input valid word into our `Trie`. (We'll use
+this later on to insert a bunch of real words into our `Trie`.)
+
+c.
+Let's fill in `Trie.get_longest_valid_prefix`. This function should return the
+longest prefix of the input that is a valid English word, according to our `Trie`.
+
+Let's look at an example:
+
+```
+input: ADOGS
+output: ADO
+```
+
+If this example doesn't sense to you, grab a TA to talk it through.
+
+There are a few tests for the implementation of `Trie.get_longest_valid_prefix` in
+`tests/spelling_extension`. When you're done with your implementation, make sure to run
+the tests in that directory to check your implementation:
+    
+`$ dune runtest tests/spelling_extension`
+
+4. Putting it all together
+
+a.
+Let's fill in the `Game.trie` variable, where we currently create a set of valid English
+words and then...ignore it. Instead, let's insert all those words into our
+`Trie`. Remember to remove the `ignore trie` statement in the same file.
+
+Hint: Make sure that case doesn't matter when we're matching an eaten string against
+valid words
+
+b.
+Let's update `Game.maybe_consume_apple` to detect the longest valid English substring
+inside the snake, and make any necessary updates to the `Game` if we find a word. We will
+consider the necessary updates to the `Snake` below.
+
+Most of the work here will be in valid word detection. Feel free to talk to your TA about
+how you plan to implement this before diving in.
+
+We recommend adding a rule that words must be at least 3 characters in length.
+
+c.
+Finally, let's handle necessary updates to the `Snake` when we spell a valid word.
+
+Let's fill in `Snake.clear_spelled_word`. It has this signature:
+
+```val clear_spelled_word : t -> spelled_word:string -> unit```
+
+Don't forget to actually call this function in the `Game`.
+
+You should now have a full working version of the game.
+
+d. Let's add in one more nice tweak to actually display the words the player has spelled.
+Create a new field in `Game` that stores all words the player has successfully spelled so
+far and a function to expose them.
+
+We've already added this function to `Game.mli`:
+
+`val spelled_words : t -> string list`
+
+Once you've implemented this field, try running the game - we've already added logic to
+display these words.
+
+You're done - c-o-n-g-r-a-t-s on building your game! 

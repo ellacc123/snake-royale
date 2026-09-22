@@ -1,0 +1,5 @@
+;; -*- scheme -*-
+
+(executables
+ (names server)
+ (libraries async core cohttp-async snake_lib))

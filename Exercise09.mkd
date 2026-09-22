@@ -1,0 +1,38 @@
+---
+title: "Exercise 09: Competitive mode"
+uuid: bb164655-89c5-32d4-97a4-92fbe33e4a3c
+---
+
+To make this work, we'll need to make a number of changes.
+
+First, we'll need to add a second snake to our game record. The
+[Snake.create] function always starts the snake in the bottom left
+corner, facing right. We'll need to modify that function so the second
+snake can start somewhere else. Perhaps it can start in the top right,
+facing left?
+
+We'll need to modify [step] in game.ml so that both snakes are moved
+forward. Similarly, we'll need to check for apple consumption for both
+snakes in [maybe_consume_apple] in game.ml. We should also change the
+[Game_state.t] to be able to identify which player won.
+
+What are the win conditions for either player? What does it mean if
+the board is completely full, so neither snake can move forward?
+
+Next we'll have to modify the snake_graphics.ml module to display both
+snakes.  The [render] function calls [draw_snake] with the snake as an
+argument to get it to display, so you should be able to call
+[draw_snake] on both snakes to display both. The green color of the
+snake is hardcoded in [draw_snake] function. Perhaps you want to make
+that an argument to the function so you can make the snakes different
+colors.
+
+Finally you'll need to update the handle keys to accept the second
+player's input keys. One reasonable option is to use 'i', 'j', 'k',
+and 'l' as input keys for player2. Make sure that you only update the
+direction of the correct player's snake!
+
+Some other ideas to consider: 
+- how does your competitive mode interact with scoring?
+- what happens if the two snakes collide with each other?
+- does it make sense to have more than one apple? 

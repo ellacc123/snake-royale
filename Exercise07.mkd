@@ -1,0 +1,40 @@
+---
+title: "Exercise 07: Apple Variants"
+uuid: ac7cf108-da4a-389b-7286-0c328ff2d703
+---
+
+Go take a look at apple.ml.
+
+At the top of this function is the definition for a Color variant.
+
+Currently the only option is Red. Let's add Gold as another option.
+You'll have to update the type definition in apple.mli as well.
+
+You'll see some compilation errors. Some other functions that will
+need to be updated are:
+- [amount_to_grow] in apple.ml
+- [apple_color] in snake_graphics.ml
+  (hint: the rgb in 'golden yellow' is (255, 223, 0), but feel free to
+  play around and use a different color instead!)
+
+Now that we've fixed the compilation errors, the apple still doesn't
+actually have a color yet! Let's modify the [Apple.t] record type to
+add a color.
+
+This means you'll also need to update the [create] function to choose
+a color. How will the color be decided? Do you want some colors to
+spawn more often than others? Maybe the color can be based on how many
+apples have eaten already. Go wild!
+
+By the way, there's a function in apple.ml called [color] that
+currently always return Red. Make sure to modify that function to
+return the color of your apple instead.
+
+In case it's useful, the "@@deriving enumerate" that is attached to
+the Color variant provides the following function, that gives us all
+the possible variants:
+
+` val all : Color.t list `
+
+When you're done with your changes, make sure to check that the tests
+in tests/exercise07 pass.

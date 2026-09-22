@@ -1,0 +1,38 @@
+---
+title: Useful String Functions
+uuid: 3ad9fabe-a5af-11ef-8d47-aa9df7d4b76d
+---
+
+Here are some useful `String` functions. You won't need these until the Spelling Game extension.
+
+# `String.substr_replace_first`
+
+This function replaces the first instance of a substring with a new substring of your
+choice in a given input string. It has the following signature:
+
+```val substr_replace_first : ?pos:int -> t -> pattern:t -> with_:t -> t```
+
+
+# `String.to_list`
+
+This function turns a string into the corresponding list of characters. It has the
+following signature:
+
+```val to_list : t -> char list```
+
+
+# `String.of_list`
+
+This function turns a list of characters into the corresponding string. It has the
+following signature:
+
+```val of_list : char list -> t```
+
+
+# `String.sub`
+
+This function returns the substring corresponding to the starting position within the
+base string and the new length that you define. It has the following signature:
+
+```val sub : string -> pos:int -> len:int -> string```
+

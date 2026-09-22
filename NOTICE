@@ -1,0 +1,72 @@
+Snake (OCaml server + TypeScript client)
+
+This product includes software developed by Jane Street Group, LLC.
+
+-------------------------------------------------------------------------------
+Upstream work
+-------------------------------------------------------------------------------
+
+This repository is a Derivative Work of the "snake" exercise from the Jane
+Street OCaml workshop:
+
+    https://github.com/janestreet/learn-ocaml-workshop  (03-snake)
+
+The upstream work is licensed under the Apache License, Version 2.0. A copy of
+that license is distributed with this repository as the file LICENSE, and is
+also available at:
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+The upstream repository does not distribute a NOTICE file of its own. This
+NOTICE is supplied by the maintainer of this fork to record attribution and the
+changes described below.
+
+-------------------------------------------------------------------------------
+Files taken from the upstream work and modified
+-------------------------------------------------------------------------------
+
+The following files originate in the upstream workshop and HAVE BEEN MODIFIED
+in this repository. The workshop distributes them as exercise scaffolding with
+unimplemented stubs; the implementations they now contain were written by the
+maintainer of this fork, and several were further extended to support
+two-player and networked play.
+
+    bin/snake.ml
+    src/apple.ml            src/apple.mli
+    src/board.ml            src/board.mli
+    src/direction.ml        src/direction.mli
+    src/game.ml             src/game.mli
+    src/game_state.ml       src/game_state.mli
+    src/letter.ml           src/letter.mli
+    src/letters.ml          src/letters.mli
+    src/position.ml         src/position.mli
+    src/snake.ml            src/snake.mli
+    src/snake_graphics.ml   src/snake_graphics.mli
+    tests/exercise01/ .. tests/exercise08/
+    tests/spelling_extension/
+
+-------------------------------------------------------------------------------
+Files taken from the upstream work unmodified
+-------------------------------------------------------------------------------
+
+    README.mkd  (an attribution header has been prepended; otherwise unchanged)
+    Exercise07.mkd, Exercise08.mkd, Exercise09.mkd, Exercise10.mkd
+    LIST_FUNCTIONS.mkd, STRING_FUNCTIONS.mkd, Spelling_Game.mkd
+    src/run.ml, src/run.mli
+    src/trie.ml, src/trie.mli
+    src/snake_lib.ml
+    src/dune, bin/dune, dune-project, .ocamlformat
+
+-------------------------------------------------------------------------------
+Files original to this repository
+-------------------------------------------------------------------------------
+
+The following are not part of the upstream work. They were written by the
+maintainer of this fork and are licensed under the Apache License, Version 2.0,
+the same terms as the work they build on.
+
+    server/server.ml, server/dune    HTTP game server (Async + Cohttp)
+    web/                             TypeScript client (Vite)
+    tests/exercise09/                tests for competitive two-player mode
+    NETWORK_PLAY.md                  design notes for the networked build
+    LICENSE, NOTICE

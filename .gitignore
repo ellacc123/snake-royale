@@ -1,0 +1,27 @@
+_build/
+node_modules/
+dist/
+.DS_Store
+
+# Secrets and local config
+.env
+.env.*
+!.env.example
+
+# Deploy / tunnel artifacts
+.vercel/
+.cloudflared/
+ngrok.yml
+cert.pem
+*.pem
+*.key
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Debug leftovers
+*.log
+*.pcap
+*.har
