@@ -1,16 +1,16 @@
 # Snake Royale
 
-Competitive two-player Snake played across two computers, with an authoritative game server written in OCaml.
+Implemented core logic for Jane Street's OCaml Snake with a twist.
 
-The server owns the entire simulation. It ticks the game on an Async clock at 10 Hz whether or not anyone is watching, routes each player's keystrokes to their own snake by token, and detects a dropped opponent through the same poll the client already uses to render. Browsers hold no game logic at all: they draw the state document they are handed and post keys back. Two screens cannot disagree about where the snakes are, because only one process knows.
+This is a competitive two-player Snake game that can be played across two computers, with an authoritative game server written in OCaml.
+
+The server owns the entire simulation. It ticks the game on an Async clock at 10 Hz whether or not anyone is watching, routes each player's keystrokes to their own snake by token, and detects a dropped opponent through the same poll the client already uses to render. The browsers hold no game logic at all, and draw the state document they are handed and post keys back. Two screens cannot disagree about where the snakes are, because only one process knows.
 
 **Stack:** 
 ![OCaml](https://img.shields.io/badge/OCaml-EC6813?logo=ocaml&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white)
 ![Dune](https://img.shields.io/badge/build-dune-555)
-
-**Design notes:** [NETWORK_PLAY.md](NETWORK_PLAY.md) argues all thirteen design decisions, the alternatives rejected, and the known weaknesses.
 
 ---
 
