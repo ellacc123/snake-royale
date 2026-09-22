@@ -1,223 +1,172 @@
+# Snake Royale
+
+Competitive two-player Snake played across two computers, with an authoritative game server written in OCaml.
+
+The server owns the entire simulation. It ticks the game on an Async clock at 10 Hz whether or not anyone is watching, routes each player's keystrokes to their own snake by token, and detects a dropped opponent through the same poll the client already uses to render. Browsers hold no game logic at all: they draw the state document they are handed and post keys back. Two screens cannot disagree about where the snakes are, because only one process knows.
+
+**Stack:** 
+![OCaml](https://img.shields.io/badge/OCaml-EC6813?logo=ocaml&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white)
+![Dune](https://img.shields.io/badge/build-dune-555)
+
+**Design notes:** [NETWORK_PLAY.md](NETWORK_PLAY.md) argues all thirteen design decisions, the alternatives rejected, and the known weaknesses.
+
 ---
-title: Snake!
-uuid: 7d22cc6b-de84-373c-edc4-b26f9cbac727
+
+## What it looks like
+
+**Two players on two machines, plus a spectator on the same match.** Every client renders from the same state document, so positions and scores stay in step with no client-side simulation and no reconciliation logic.
+
+![Two players and a spectator](two-players.png)
+
+**The first player to join waits.** The clock is already running, because an abandoned seat still has to time out, but the game does not advance until both seats are filled. Keys are ignored while waiting, so nobody warms up by steering an unstarted game.
+
+![Waiting for an opponent](docs/waiting-for-opponent.png)
+
+**The server decides the outcome and says why,** including draws where both snakes die on the same tick. Both clients report it identically because neither one computed it.
+
+![Game over on both screens](docs/game-over.png)
+
+**Everyone after the first two spectates.** Spectators receive the full state document but no token, so their keystrokes are ignored by the server rather than filtered by the client.
+
+![Spectating](docs/spectating.png)
+
 ---
 
-> **Attribution.** This repository is a modified copy of the `03-snake`
-> exercise from the [Jane Street OCaml
-> workshop](https://github.com/janestreet/learn-ocaml-workshop), used under the
-> Apache License 2.0. The exercise text and scaffolding below are Jane Street's;
-> the exercise solutions, the HTTP game server in `server/`, the TypeScript
-> client in `web/`, and [`NETWORK_PLAY.md`](NETWORK_PLAY.md) are this fork's own
-> work. See [`NOTICE`](NOTICE) for the full list of which files were changed and
-> which are original, and [`LICENSE`](LICENSE) for the license text.
->
-> For the networked two-player build and its design rationale, start at
-> [`NETWORK_PLAY.md`](NETWORK_PLAY.md).
+## Architecture
 
-The goal of this series of exercises is to teach you OCaml while
-implementing a game of snake.
+The game engine is a pure library with no I/O in it. Everything that talks to the outside world is a thin frontend over that one library:
 
-Below is an an explanation of each exercise. The documentation here
-and embedded in the code will help guide you through each step along
-the way and also give you the tools to debug and understand the rest
-of provided code.
+- `bin/snake.exe` renders it to an OCaml `Graphics` window and reads a local keyboard.
+- `server/server.exe` renders it to JSON and reads keystrokes from HTTP requests.
 
-We encourage you to use your favorite editor to write the code; if you
-aren't already committed to one, we recommend using VSCode.
+Both call the same `Game.step`. Adding networking did not fork the rules, which is the entire reason two clients can never disagree. `src/game.mli` pins the library's public surface, so the server can only reach the operations the engine intends to expose.
 
-# Exercise 00: Getting Started
+One process owns one room with two seats. An Async clock fires every 100 ms; each tick first expires any seat that has stopped polling, then steps the game only if both seats are still filled. Async is cooperative and single-threaded, and every mutation of the room happens synchronously inside the handler before the response deferred is constructed, so the shared mutable state needs no locking. The place that would break it is documented rather than left as a trap.
 
+## Does the game clock survive load?
 
-First, let's start by compiling the existing code. Once you're in the
-snake directory, you can the following to compile your code:
+Single-threaded cooperative concurrency is the interesting risk in this design: if request handling can starve the scheduler, the game clock slips and the simulation slows down for everyone. So that is the thing I measured, rather than throughput for its own sake.
 
-` $ dune build `
+The tick is observable from outside the process. Player 1 spawns at column 2 on a 25-wide board and moves one column per tick, so an unsteered snake dies after exactly 23 ticks. Timing that gives the effective clock period:
 
-This command will make dune build the default targets of the snake
-game.
+| | Time to 23 ticks | Effective period |
+| --- | --- | --- |
+| Idle | 2.257 s | 102.6 ms |
+| Under `wrk -t4 -c100` (47.4k req/s concurrent) | 2.227 s | 101.2 ms |
 
-You can also run dune in polling mode, which will watch your
-filesystem for any changes and rebuild when necessary. To do this, run
-the following (probably in its own terminal):
+The two runs differ by less than the noise floor of the method (both endpoints are detected by polling `/api/state`, so each carries sampling error, and the loaded run came out nominally *faster*, which cannot be a real effect). The conclusion available here is that the clock held its period under saturation, not that load made it faster.
 
-` $ dune build -w `
+Throughput from the same server, for context:
 
-OCaml code can be autoformatted using ocamlformat. To format your code, run
-
-` $ dune fmt `
-
-If you're using VSCode, you can configure your editor to automatically save and
-format your code periodically. Otherwise, you might want to run the above command
-periodically to manually format your code.
-
-Each exercise has its own tests. To run the tests for exercise number N, run
-
-` $ dune runtest tests/exerciseN `
-
-To run the game of snake, run
-
-` $ dune exec bin/snake.exe `
-
-(Note that this command will also rebuild the snake executable if
-necessary.)
-
-
-To kill the game, run Ctrl-C in the terminal you launched the game from.
-
-As you can see, we've provided you with some framework code that
-creates the snake game and spawns an apple, but does nothing else. Not
-very exciting. Through the exercises that follow, you'll turn this
-into a fully working game!
-
-NOTE: many of the exercises will have ignore statements at the
-top. The reason for this is OCaml complains about unused
-variables. The ignores are present so that you don't have issues
-running the game with parts not yet complete. When you start work on
-an exercise, you should remove all the ignores so that the compiler
-warns you about unused variables.
-
-A few tips and hints:
-
-- If you are seeing unexpected syntax errors in your editor
-  (especially VSCode), try rebuilding the executable in the
-  terminal.
-- If you are trying to debug by running the snake game and the snake
-  is moving too fast, a reasonable thing to do might be to temporarily
-  decrease the speed of the snake. To do so, change the `0.1` to a
-  larger value in the `handle_steps` function in `run.ml`.
-- If you would like to print out various parts of your program's state
-  for debugging, you can use the `printf` or `print_s`. Here are a few
-  examples, and feel free to grab a TA if you have any questions.
-
-```ocaml
-printf "My int is: %d. My string is %s.\n" int_variable string_variable;
-print_s [%message (int_variable : int) (string_variable : string)];
+```
+wrk -t4 -c100 -d30s --latency http://localhost:8080/api/state
+  1,377,747 requests in 30.03s, 0.97GB read
+  Requests/sec:  45,878
+  Latency  p50 2.05ms  p90 2.71ms  p99 8.32ms  max 68.55ms
 ```
 
-# Exercise 01: Moving Forward
+45.9k req/s on one core, zero timeouts, still serving 200s afterwards. Two players at a 50 ms poll generate about 40 req/s, so the server was never going to be the constraint; the number is here to show the handler does no accidental per-request work, which is what keeps the scheduler shallow enough for a 100 ms timer to fire on time.
 
-Alright. The first thing we need to do is make it so the snake
-actually moves. In `src/snake.ml`, there is a function stub
-`move_forward`, which is supposed to advance the snake's position one
-square. Open up that file, and read the exercise there.
+**Caveats.** Loopback on a single machine, with the load generator competing for the same CPU. This exercises the state-read path only: a fixed-shape 533-byte response with no body parsing. The p50-to-p99 spread of 4x is most likely GC. These numbers say the design has no starvation bug; they are not a claim about behaviour over a real network.
 
-# Exercise 02: Turning
+## Repo layout
 
-If you run the game now, the snake should walk forward until it
-reaches the edge of the black board, but it will never stop and will
-keep moving forever. There's also no way for you to interact with
-it, and there's nothing that ends the game. We'll tackle both of
-these, but let's work on making our game interactive by handling
-keyboard input first.
+```
+src/                 game engine: pure logic, no I/O, no networking
+  game.ml/.mli       the one place the rules live; .mli pins the public surface
+  snake.ml           movement, growth, self-collision
+  board.ml           bounds
+  apple.ml           spawning and apple colors
+  direction.ml       turn legality
+  game_state.ml      in progress / win / game over / player wins
+bin/snake.ml         terminal frontend (OCaml Graphics)
+server/server.ml     HTTP frontend: seats, tokens, heartbeats, JSON writer
+web/                 browser client, holds zero game logic
+  src/types.ts       authoritative description of the state document
+  src/api.ts         transport only, relative /api base
+  src/main.ts        session, polling loop, canvas rendering
+  vite.config.ts     dev server, proxies /api to :8080
+tests/exerciseNN/    inline expect tests, one directory per feature
+NETWORK_PLAY.md      design decisions, rejected alternatives, known weaknesses
+```
 
-Let's complete:
+Two boundaries do the work here. `src/` never imports Async or Cohttp, so the engine stays testable without a server and reusable by both frontends. `web/` never imports game rules, so there is no second implementation to keep in sync. Everything networking-specific lives in exactly one file, `server/server.ml`, which is why the design notes can be a single document rather than a scavenger hunt.
 
-- exercise 02a in `src/direction.ml`
-- exercise 02b in `src/game.ml`
+## Tooling
 
-# Exercise 03: Losing
+| Tool | Why it's here |
+| --- | --- |
+| **dune** | Library and executable separation is enforced by the build, not by convention. `src/` cannot accidentally depend on the server. |
+| **opam** | Pinned toolchain and dependencies, so the build is reproducible off my laptop. |
+| **Async** | Cooperative single-threaded concurrency. The scheduler runs the game clock and the request handler on the same thread, which is what makes lock-free shared state correct rather than lucky. |
+| **Cohttp** | Minimal HTTP server, no framework, no routing DSL. The handler is one `match` on method and path. |
+| **ppx_expect** | Inline expect tests per feature directory, run with `dune runtest tests/exerciseNN`. |
+| **ocamlformat** | `dune fmt` enforces one style across the whole repo. |
+| **TypeScript** | `web/src/types.ts` mirrors the server's JSON shape, so a change to the state document breaks the client at compile time instead of at runtime. |
+| **Vite** | Dev server proxies `/api` to the OCaml server, so the client uses a relative base and no hostname or port is hardcoded anywhere in the frontend. It also means LAN play needs no client configuration. |
 
-As noted in the previous exercise, nothing currently prevents the
-snake from running off of the black game board. This is the next thing
-we're going to fix.
+The server has no JSON dependency. The payload shape is fixed and small, so it ships a hand-rolled writer rather than pulling in a parser it would never use. That is also why parameters travel in the query string: accepting a JSON body would mean hand-rolling a reader too, which is far more code and far more error-prone than a writer that emits one known shape.
 
-Let's complete:
+## Design decisions
 
-- exercise 03a in `src/board.ml`
-- exercise 03b in `src/game.ml`
+Each is argued in full, with the alternatives considered, in [NETWORK_PLAY.md](NETWORK_PLAY.md).
 
-# Exercise 04: Self-collision
+| Decision | Why |
+| --- | --- |
+| Server authoritative, client simulates nothing | Duplicated rules have to agree forever or the screens diverge. One copy deletes the entire class of desync bugs. |
+| Tokens, not cookies or IP addresses | A cookie is shared across every tab in a profile, and two windows on one machine share an IP. Neither is an identity. |
+| Token in a module variable, never in storage | `localStorage` is shared across tabs; `sessionStorage` survives reloads and would resume a seat the server may already have reassigned. |
+| The state poll *is* the heartbeat | The client already polls to render. A player who is still polling is still there, so a second liveness mechanism is redundant state that can disagree with the first. |
+| 3 seconds, not 0.5 or 10 | At a 50 ms poll that is roughly 60 consecutive missed polls, so GC pauses and dropped packets cannot trip it, while the survivor is never left staring at a frozen board. |
+| Clock runs while waiting; the game does not | Timeouts must fire even when nobody is playing, or a player who joins and closes their laptop holds a seat forever. |
+| Filling the second seat starts a fresh game | Otherwise a joiner inherits the previous occupant's half-lost position. |
+| Forfeit reuses `Game_state.Player_wins` | A disconnection is just another reason a player won. A separate variant would force every match on game state to grow an identical case. |
+| A finished game is never overwritten by a forfeit | Closing your tab after a draw should not retroactively convert it into a win. |
+| Both players press w/a/s/d | On one keyboard the keystroke identifies the player; over the network the connection does, and both players want the comfortable keys. Two functions, not one with a mode flag. |
 
-There's one more kind of collision that should end the game: the snake
-should die if it collides with itself. Once again there are two things
-we need to fix to make this happen.
+## Running it
 
-Let's complete:
+```bash
+dune exec server/server.exe            # terminal 1, serves :8080
+cd web && npm install && npm run dev   # terminal 2, serves :5173
+```
 
-- exercise 04a in `src/snake.ml`
-- exercise 04b in `src/game.ml`
+Open <http://localhost:5173> in two windows. The first two get seats, everyone else spectates. Both players steer with `w`/`a`/`s`/`d`; `r` restarts. Player 1 is green, player 2 is cyan, and the status line tells each client which it is.
 
-# Exercise 05: Spawning Apples
+To play from a second computer on the same network, start the client with `npm run dev -- --host` and open `http://<your-ip>:5173` there. Vite proxies `/api`, so nothing in the client changes.
 
-While playing with the game, you might have noticed that there is
-always a red dot that spawns on the board. This represents the apple
-that the snake is supposed to eat.
+The disconnect timeout is testable without waiting three seconds per run:
 
-You may have noticed it always spawns in the exact same position. This
-is because in apple.ml, we hardcoded that position into the
-`possible_apple_positions` function, which is used to create the
-apple.
+```bash
+SNAKE_HEARTBEAT_SECONDS=0.5 dune exec server/server.exe
+```
 
-Let's fix this by completing exercise 05 in `src/apple.ml`
+That knob exists for tests. It is not a gameplay setting.
 
-# Exercise 06: Consuming Apples
+## API
 
-Now our apple can spawn at an arbitrary position but it's still the
-case that nothing happens when the snake goes over the apple.  We need
-to change it to consume the apple, and also cause the snake to grow
-over its next few steps.
+| Method | Path | Parameters | Returns |
+| --- | --- | --- | --- |
+| `POST` | `/api/join` | | `{role, seat, token}`; `role` is `player` or `spectator` |
+| `GET` | `/api/state` | `token` (optional) | full state document; also a heartbeat |
+| `POST` | `/api/key` | `key`, `token` | full state document |
 
-Let's complete:
+The state document carries `you` (this caller's role and seat), `room` (which seats are taken, whether the game is waiting), the board, both snakes, both scores and the game state. `web/src/types.ts` is the authoritative description of that shape.
 
-- exercise 06a in `src/snake.ml`
-- exercise 06b in `src/game.ml`
-- exercise 06c in `src/snake.ml`
+## Scope and trade-offs
 
-# Extensions
+This is built for localhost and a LAN, deliberately, and the boundaries are drawn so that lifting any one of them is a contained change rather than a rewrite. The full accounting is in [NETWORK_PLAY.md](NETWORK_PLAY.md); the ones worth knowing up front:
 
-Amazing! We now have a minimally viable version of snake!
+- **Polling, not push.** Fine for two clients at 20 Hz, wasteful at any real scale. The state document is already the unit of transfer, so moving to server-sent events is a transport swap, not a redesign, and the heartbeat logic disappears with it.
+- **Tokens travel in the query string,** where proxies and browser history log them. A direct consequence of the no-JSON-parser constraint, and the first thing to change if this left the LAN.
+- **Tokens come from `Random`, not a CSPRNG.** 128 bits of hex is the right shape; the entropy behind it is not cryptographic. Correct for a LAN opponent, wrong for anything public.
+- **One room, no lobby.** The state is already grouped in a single record, so a `Hashtbl` of rooms is contained, but it adds an empty-room lifecycle that nothing currently needs.
+- **No reconnection.** A reload is a new identity, so reloading inside the timeout window can leave you spectating your own game.
 
-All exercises after this are extensions which will update and modify
-the game to make it more varied and more interesting. You can choose
-to implement any of these in any order, or come up with your own
-extensions.
+**Next, in order:** server-sent events to replace polling; reconnection by presenting an old token; multiple rooms keyed by path; move the token out of the URL, which by then costs only a header lookup.
 
-Rather than intersperse the explanations amongst each file that you'll
-need to touch, each of these extensions is explained in full detail in
-Exercise##.mkd. The explanation will guide you to what files you need
-to modify, but you'll have to figure out the exact changes to be made
-by yourself.
+## Credits and license
 
-If you would be excited to try some extensions that are not listed
-here, feel free to do those instead!  Grab a TA if you want to talk
-about an extension that isn't listed here.
-
-## [Exercise 07: Apple variants](Exercise07.mkd)
-
-There's no reason apples always have to be red. Exercise 07 will walk
-you through how to make different colors of apples that might have
-different behavior for the snake.
-
-## [Exercise 08: Score](Exercise08.mkd)
-
-The win condition for the game is filling the board, but maybe
-displaying a current score would be nice. If you added different apple
-colors in exercise07 you could make them worth different amounts of
-points.
-
-## [Exercise 09: Multiplayer](Exercise09.mkd)
-
-Competitive mode! This will show you how to add more snakes to the
-game so you can play against a friend.
-
-## [Exercise 10: Restart game button](Exercise10.mkd)
-
-It'd be nice if we didn't have to kill and relaunch the game from the
-terminal every time we wanted to play again. In this exercise, you'll
-implement a button to restart the game.
-
-## Other ideas
-
-You're more than welcome to come up with your own modifications and
-extensions to the game! Here are a few ideas to get those creative
-juices flowing.
-
-- add apples with interesting effects (e.g. changing the color of the
-snake, causing game mechanics to change)
-- add other keybindings with interesting effects
-- make the game speed up over time
-- allow the snake to overlap with itself
-- allow the snake to wrap around when it hits a wall
-- after implementing restart, implement a high-score board that
-persists between restarts
+The single-player game underneath this is the `03-snake` exercise from [Jane Street's OCaml workshop](https://github.com/janestreet/learn-ocaml-workshop), used under the Apache License 2.0. The exercise solutions, competitive mode, the HTTP server in `server/`, the TypeScript client in `web/`, and `NETWORK_PLAY.md` are original work in this fork. [NOTICE](NOTICE) lists which files were modified and which are new; [LICENSE](LICENSE) has the license text. This repository is Apache 2.0.
